@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View , Text, TextInput, TouchableOpacity, StyleSheet, Alert, Modal } from 'react-native';
+import { View , Text, TextInput, TouchableOpacity, StyleSheet, Alert, Modal, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { addProductToDB, setupDatabase } from '../services/db';
 import { Product } from '../types/products';
 import { useNavigation } from '@react-navigation/native';
@@ -52,119 +52,154 @@ const AddProductScreen = () =>{
 
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.label}>Name</Text>
-            <TextInput
-                style={styles.input}
-                value={product.name}
-                onChangeText={(text) => handleChange('name', text)}
-                placeholder="Enter product name"
-            />
+        <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={100}
+        >
+            <ScrollView contentContainerStyle={styles.container}>
+                {/* <Text style={styles.title}>Add Product</Text>` */}
 
-            <View >
                 <Text style={styles.label}>Barcode</Text>
+                <View style={styles.barcodeContainer}>
+                    <TextInput
+                        style={[styles.input, { flex: 1, marginRight: 10 }]}
+                        value={product.barcode}
+                        onChangeText={(text) => handleChange('barcode', text)}
+                        placeholder="Enter barcode"
+                    />
+                    <TouchableOpacity style={styles.scanButton} onPress={() => setScanning(true)}>
+                        <Text style={{ color: '#fff' }}>Scan</Text>
+                    </TouchableOpacity>
+                </View>
+                
+                <Text style={styles.label}>Product Name</Text>
                 <TextInput
                     style={styles.input}
-                    value={product.barcode}
-                    onChangeText={(text) => handleChange('barcode', text)}
-                    placeholder="Enter barcode"
+                    value={product.name}
+                    onChangeText={(text) => handleChange('name', text)}
+                    placeholder="Enter product name"
                 />
-                <TouchableOpacity style={styles.scanButton} onPress={() => setScanning(true)}>
-                    <Text style={{ color: '#fff' }}>Scan</Text>
+
+                
+
+                <Text style={styles.label}>Price</Text>
+                <TextInput
+                    style={styles.input}
+                    value={product.price.toString()}
+                    onChangeText={(text) => handleChange('price', text)}
+                    placeholder="Enter price"
+                    keyboardType="decimal-pad"
+                />
+
+                <Text style={styles.label}>Unit</Text>
+                <TextInput
+                    style={styles.input}
+                    value={product.unit}
+                    onChangeText={(text) => handleChange('unit', text)}
+                    placeholder="Enter unit"
+                />
+
+                <Text style={styles.label}>Category</Text>
+                <TextInput
+                    style={styles.input}
+                    value={product.category}
+                    onChangeText={(text) => handleChange('category', text)}
+                    placeholder="Enter category"
+                />
+
+                <Text style={styles.label}>Stock Quantity</Text>
+                <TextInput
+                    style={styles.input}
+                    value={product.stock_quantity.toString()}
+                    onChangeText={(text) => handleChange('stock_quantity', text)}
+                    placeholder="Enter stock quantity"
+                    keyboardType="numeric"
+                />
+
+                <Text style={styles.label}>Minimum Stock</Text>
+                <TextInput
+                    style={styles.input}
+                    value={product.min_stock.toString()}
+                    onChangeText={(text) => handleChange('min_stock', text)}
+                    placeholder="Enter minimum stock"
+                    keyboardType="number-pad"
+                />
+
+                <TouchableOpacity style={styles.button} onPress={handelSave}>
+                    <Text style={styles.buttonText}>Save Product</Text>
                 </TouchableOpacity>
-            </View>
-            
+            </ScrollView>
 
-            <Text style={styles.label}>Price</Text>
-            <TextInput
-                style={styles.input}
-                value={product.price.toString()}
-                onChangeText={(text) => handleChange('price', text)}
-                placeholder="Enter price"
-                keyboardType="decimal-pad"
-            />
-
-            <Text style={styles.label}>Unit</Text>
-            <TextInput
-                style={styles.input}
-                value={product.unit}
-                onChangeText={(text) => handleChange('unit', text)}
-                placeholder="Enter unit"
-            />
-
-            <Text style={styles.label}>Category</Text>
-            <TextInput
-                style={styles.input}
-                value={product.category}
-                onChangeText={(text) => handleChange('category', text)}
-                placeholder="Enter category"
-            />
-
-            <Text style={styles.label}>Stock Quantity</Text>
-            <TextInput
-            style={styles.input}
-            value={product.stock_quantity?.toString()}
-            onChangeText={(text) => handleChange('stock_quantity', text)}
-            placeholder="Enter stock quantity"
-            keyboardType="numeric"
-            />
-
-            <Text style={styles.label}>Minimum Stock</Text>
-            <TextInput
-                style={styles.input}
-                value={product.min_stock.toString()}
-                onChangeText={(text) => handleChange('min_stock', text)}
-                placeholder="Enter minimum stock"
-                keyboardType="number-pad"
-            />
-
-            <TouchableOpacity style={styles.button} onPress={handelSave}>
-                <Text style={styles.buttonText}>Save Product</Text>
-            </TouchableOpacity>
-
+            {/* Barcode Scanner Modal */}
             <Modal visible={scanning} animationType="slide">
                 <CameraView
-                    style={{ flex: 1 }}
-                    barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8', 'upc_e', 'code39', 'code128', 'qr'] }}
-                    onBarcodeScanned={handleBarCodeScanned}
-                    >
-                    <View style={styles.closeScannerButton}>
-                        <TouchableOpacity onPress={() => setScanning(false)}>
-                        <Text style={{ color: 'white', fontSize: 16 }}>Cancel</Text>
-                        </TouchableOpacity>
-                    </View>
-                    </CameraView>
+                style={{ flex: 1 }}
+                barcodeScannerSettings={{
+                    barcodeTypes: ['ean13', 'ean8', 'upc_e', 'code39', 'code128', 'qr'],
+                }}
+                onBarcodeScanned={handleBarCodeScanned}
+                >
+                <View style={styles.closeScannerButton}>
+                    <TouchableOpacity onPress={() => setScanning(false)}>
+                    <Text style={{ color: 'white', fontSize: 16 }}>Cancel</Text>
+                    </TouchableOpacity>
+                </View>
+                </CameraView>
             </Modal>
-        </View>
+        </KeyboardAvoidingView>
     )
 }
 
 export default AddProductScreen;
 
 const styles = StyleSheet.create({
-    container: { flex: 1, padding: 16 },
-    label: { marginTop: 10, fontWeight: 'bold' },
+    container: {
+        padding: 20,
+        paddingBottom: 40
+    },
+    title: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        marginBottom: 20,
+        textAlign: 'center'
+    },
+    label: {
+        marginTop: 12,
+        fontWeight: 'bold',
+        fontSize: 16
+    },
     input: {
         borderWidth: 1,
         borderColor: '#ccc',
         borderRadius: 8,
-        padding: 10,
-        marginTop: 4,
+        padding: 12,
+        marginTop: 6,
+        fontSize: 16,
+        backgroundColor: '#fff'
+    },
+    barcodeContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 6
+    },
+    scanButton: {
+        backgroundColor: '#007bff',
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        borderRadius: 8
     },
     button: {
         backgroundColor: '#28a745',
-        padding: 14,
+        paddingVertical: 16,
         borderRadius: 8,
         alignItems: 'center',
-        marginTop: 20,
+        marginTop: 24
     },
-    buttonText: { color: 'white', fontSize: 16 },
-    scanButton: {
-        backgroundColor: '#007bff',
-        padding: 10,
-        borderRadius: 6,
-        justifyContent: 'center',
-        alignItems: 'center',
+    buttonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '600'
     },
     closeScannerButton: {
         position: 'absolute',
@@ -172,6 +207,6 @@ const styles = StyleSheet.create({
         right: 20,
         backgroundColor: 'rgba(0,0,0,0.6)',
         padding: 10,
-        borderRadius: 8,
-    },
+        borderRadius: 8
+    }
 });

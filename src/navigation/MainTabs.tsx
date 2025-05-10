@@ -23,7 +23,7 @@ const MainTabs = () => {
                     case 'Inventory':
                     iconName = 'cube-outline';
                     break;
-                    case 'AddProduct':
+                    case 'Add Product':
                     iconName = 'add-circle-outline';
                     break;
                     case 'Invoices':

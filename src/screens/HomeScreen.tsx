@@ -10,11 +10,9 @@ const HomeScreen = ({navigation}: any) =>{
             headerRight: () =>{
                 return (
                     <View style={styles.headerIcons}>
-                        <TouchableOpacity onPress={() => navigation.navigate('AddProduct')} style={styles.iconButton}>
-                            <Ionicons name="scan-outline" size={24} color="#007bff" />
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => navigation.navigate('CreateInvoice')} style={styles.iconButton}>
-                            <Ionicons name="add-circle-outline" size={24} color="#007bff" />
+                        <TouchableOpacity onPress={() => navigation.navigate('CreateInvoice')} style={styles.headerButton}>
+                            <Ionicons name="add-circle-outline" size={20} color="#007bff" />
+                            <Text style={styles.headerButtonText}>Create Invoice</Text>
                         </TouchableOpacity>
                     </View>
                 )
@@ -58,6 +56,16 @@ const styles = StyleSheet.create({
   },
   iconButton: {
     padding: 4,
+  },
+  headerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 10,
+    gap: 4,
+  },
+  headerButtonText: {
+    color: '#007bff',
+    fontSize: 16,
   },
 })
 

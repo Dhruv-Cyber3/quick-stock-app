@@ -141,6 +141,24 @@ export const addProductToDB = async (product: Product, callback: () => void) => 
   
 };
 
+export const updateProductStock = async (barcode: string, quantityToAdd: number, callback: () => void) => {
+  if(!db) {
+    await setupDatabase();
+  }
+  if (!db) throw new Error('Database not initialized. Call setupDatabase first.');
+  try {
+    db.runAsync(
+      'UPDATE products SET stock_quantity = stock_quantity + ? WHERE barcode = ?',
+      [quantityToAdd, barcode]
+    )
+    .then(() => callback())
+    .catch((error) => {
+        console.error('Failed to insert product', error);
+    });
+  } catch (error) {
+    throw new Error('Failed to update product stock: ' + (error instanceof Error ? error.message : String(error)));
+  }
+}
 
 export const addInvoiceToDB = async (invoice: Invoice) => {
   if (!invoice || !invoice.customer_name || !invoice.date || !Array.isArray(invoice.items) || invoice.items.length === 0) {
@@ -254,3 +272,32 @@ export const reduceProductStock = async ( productId: number,  quantity: number):
     [quantity, productId]
   );
 };
+
+export const updateProductInDB = async (product: Product) => {
+  if(!db) {
+    await setupDatabase();
+  }
+  if (!db) throw new Error('Database not initialized. Call setupDatabase first.');
+  try {
+    await db.runAsync(
+      `UPDATE products SET name = ?, barcode = ?, price = ?, unit = ?, category = ?, stock_quantity = ?, min_stock = ? WHERE id = ?`, 
+      [product.name, product.barcode, product.price, product.unit, product.category, product.stock_quantity, product.min_stock, product.id ?? 0]
+    )
+  } catch (error) {
+    throw new Error('Failed to update product in database: ' + (error instanceof Error ? error.message : String(error)));  
+  }
+}
+
+export const deleteProductFromDB = async (id: number) => {
+  if (!db) {
+    await setupDatabase();
+  }
+
+  if (!db) throw new Error('Database not initialized. Call setupDatabase first.');
+
+  try {
+    await db.runAsync(`DELETE FROM products WHERE id = ?`, [id]);
+  } catch (error) {
+    throw new Error('Failed to delete product from database: ' + (error instanceof Error ? error.message : String(error)));
+  }
+}

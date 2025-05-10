@@ -1,8 +1,9 @@
 import React, { useEffect, useState} from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import { getAllProducts } from '../services/db';
 import { Product } from '../types/products';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { deleteProductFromDB } from '../services/db';
 
 const ProductListScreen = ({ navigation }: any) =>{
     const [products, setProducts] = useState<Product[]>([]);
@@ -18,6 +19,12 @@ const ProductListScreen = ({ navigation }: any) =>{
         setProducts(result);
     }
 
+    const handleDelete = async (id: number) => {
+        if(!id) return;
+        await deleteProductFromDB(id);
+        loadProducts();
+    }
+
     const renderItem = ({ item }: { item: Product }) => {
         const isLowStock = item.stock_quantity !== undefined && item.min_stock !== undefined && item.stock_quantity <= item.min_stock;
         return (
@@ -29,6 +36,21 @@ const ProductListScreen = ({ navigation }: any) =>{
                 <Text>category: {item.category}</Text>
                 <Text>Stock Quantity: {item.stock_quantity}</Text>
                 {isLowStock && <Text style={styles.lowStockText}>⚠ Low Stock</Text>}
+
+                <View style={styles.actionButtons}>
+                    <TouchableOpacity
+                        style={styles.editButton}
+                        onPress={() => navigation.navigate('EditProduct', { product: item })}
+                    >
+                        <Text style={styles.actionText}>Edit</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.deleteButton}
+                        onPress={() => item.id !== undefined && handleDelete(item.id)}
+                    >
+                        <Text style={styles.actionText}>Delete</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
         )
     }
@@ -83,5 +105,24 @@ const styles = StyleSheet.create({
         color: '#d32f2f',
         fontWeight: 'bold',
         marginTop: 4,
+    },
+    actionButtons: {
+        flexDirection: 'row',
+        marginTop: 8,
+        gap: 10,
+    },
+    editButton: {
+        backgroundColor: '#ffc107',
+        padding: 8,
+        borderRadius: 6,
+    },
+    deleteButton: {
+        backgroundColor: '#dc3545',
+        padding: 8,
+        borderRadius: 6,
+    },
+    actionText: {
+        color: 'white',
+        fontWeight: 'bold',
     },
 });
