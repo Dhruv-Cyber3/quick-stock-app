@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { View , Text, TextInput, TouchableOpacity, StyleSheet, Alert, Modal, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { addProductToDB, setupDatabase } from '../services/db';
+import { addProductToDB, getProductByBarcode } from '../services/db';
 import { Product } from '../types/products';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../types';
 import { CameraView, useCameraPermissions } from 'expo-camera'
 
 const AddProductScreen = () =>{
-    const navigation = useNavigation();
+    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
     const [permission, requestPermission ] = useCameraPermissions();
     const [scanning, setScanning] = useState(false);
 
@@ -36,11 +38,26 @@ const AddProductScreen = () =>{
         });
     }
 
-    const handleBarCodeScanned = (scanned: any) => {
+    const handleBarCodeScanned = async (scanned: any) => {
         setScanning(false);
         console.log('scanned ',scanned);
         if(scanned?.data){
-            handleChange('barcode', scanned.data);
+            const existingProduct = await getProductByBarcode(scanned?.data);
+            if(existingProduct){
+                Alert.alert(
+                    "Duplicate Product",
+                    "This product already exists in your inventory. Do you want to add stock instead?",
+                    [
+                        { text: "Cancel", style: "cancel" },
+                        {
+                            text: "Add Stock",
+                            onPress: () => navigation.navigate("AddStock")
+                        }
+                    ]
+                );
+            } else {
+                handleChange('barcode', scanned.data);
+            }
         }
     }
 

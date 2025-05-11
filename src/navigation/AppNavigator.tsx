@@ -10,6 +10,7 @@ import CreateInvoiceScreen from 'src/screens/CreateInvoiceScreen';
 import InvoiceListScreen from 'src/screens/InvoiceListScreen';
 import InvoiceDetailScreen from 'src/screens/InvoiceDetailScreen';
 import EditProductScreen from 'src/screens/EditProductScreen';
+import AddStockScreen from 'src/screens/AddStockScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -25,6 +26,7 @@ const AppNavigator = () => {
       <Stack.Screen name="InvoiceList" component={InvoiceListScreen} />
       <Stack.Screen name="InvoiceDetail" component={InvoiceDetailScreen} />
       <Stack.Screen name="EditProduct" component={EditProductScreen} />
+      <Stack.Screen name="AddStock" component={AddStockScreen} options={{title: 'Add Stock'}}/>
     </Stack.Navigator>
   );
 };

@@ -41,12 +41,24 @@ const EditProductScreen = ({ route, navigation }: any) => {
                         <Text style={styles.readOnlyLabel}>Barcode:</Text>
                         <Text style={styles.readOnlyValue}>{barcode}</Text>
                     </View>
+                    <Text style={styles.label}>Product Name</Text>
                     <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="Product Name"/>
+
+                    <Text style={styles.label}>Price</Text>
                     <TextInput style={styles.input} value={price} onChangeText={setPrice} placeholder="Price" keyboardType='numeric'/>
+
+                    <Text style={styles.label}>Unit</Text>
                     <TextInput style={styles.input} value={unit} onChangeText={setUnit} placeholder="Unit"/>
+
+                    <Text style={styles.label}>Category</Text>
                     <TextInput style={styles.input} value={category} onChangeText={setCategory} placeholder="Category"/>
+
+                    <Text style={styles.label}>Stock Quantity</Text>
                     <TextInput style={styles.input} value={stockQuantity} onChangeText={setStockQuantity} placeholder="Stock Quantity" keyboardType='numeric'/>
+
+                    <Text style={styles.label}>Minimum Stock</Text>
                     <TextInput style={styles.input} value={minStock} onChangeText={setMinStock} placeholder="Minimum Stock" keyboardType='numeric'/>
+
                     <TouchableOpacity style={styles.button} onPress={handleUpdate}>
                         <Text style={styles.buttonText}>Update Product</Text>
                     </TouchableOpacity>
@@ -105,5 +117,10 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 16,
         fontWeight: '600'
+    },
+    label: {
+        marginTop: 12,
+        fontWeight: 'bold',
+        fontSize: 16
     }
 });

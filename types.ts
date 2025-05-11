@@ -8,5 +8,6 @@ export type RootStackParamList = {
     InvoiceList: undefined;
     InvoiceDetail: { invoiceId: number };
     EditProduct: undefined;
+    AddStock: undefined;
 };
   
