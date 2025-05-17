@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, FlatList, TouchableOpacity, Modal, Alert, StyleSheet } from 'react-native';
 import { Product } from 'src/types/products';
-import { getProductByBarcode, addInvoiceToDB } from 'src/services/db';
+import { getProductByBarcode, addInvoiceToDB, getAllProducts } from 'src/services/db';
 import { InvoiceItem } from 'src/types/invoiceItems';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CameraView } from 'expo-camera';
+// import { Picker } from '@react-native-picker/picker';
+// import DropDownPicker from 'react-native-dropdown-picker';
+import ProductSelector from 'src/components/ProductSelector';
+
 
 
 const CreateInvoiceScreen = () => {
@@ -12,6 +16,7 @@ const CreateInvoiceScreen = () => {
     const [invoiceItems, setInvoiceItems] = useState<{ product: Product, quantity: number }[]>([]);
     const [scannedProduct, setScannedProduct] = useState<Product | null>(null);
     const [quantity, setQuantity] = useState('');
+    const [customerName, setCustomerName] = useState('');
 
     const handleBarcodeScanned = async ({ data}: any) => {
         setScanning(false);
@@ -51,8 +56,13 @@ const CreateInvoiceScreen = () => {
             const total = invoiceItems.reduce((sum, item) => sum + item.quantity * item.product.price, 0);
             const now = new Date().toISOString();
 
+            if (!customerName.trim()) {
+                Alert.alert('Missing Info', 'Please enter a customer or company name.');
+                return;
+            }
+
             const invoice = {
-            customer_name: 'Walk-in Customer', // or make this user-input later
+            customer_name: customerName.trim() || 'Walk-in Customer',
             date: now,
             total: total,
             items: invoiceItems.map(item => {
@@ -75,7 +85,7 @@ const CreateInvoiceScreen = () => {
             setInvoiceItems([]);     // clear the form
             setScannedProduct(null); // reset scanning state if needed
             setQuantity('');         // reset quantity input
-            setInvoiceItems([]);
+            setCustomerName('');
         } catch (error) {
             Alert.alert('Error', 'Could not update stock');
         }
@@ -84,9 +94,14 @@ const CreateInvoiceScreen = () => {
     return (
         <View style={styles.container}>
             {!scannedProduct && (
-                <TouchableOpacity style={styles.scanButton} onPress={() => setScanning(true)}>
-                    <Text>Scan Product</Text>
-                </TouchableOpacity>
+                <>
+                    <TouchableOpacity style={styles.scanButton} onPress={() => setScanning(true)}>
+                        <Text>Scan Product</Text>
+                    </TouchableOpacity>
+
+                    <ProductSelector onSelect={setScannedProduct} />
+
+                </>
             )}
 
             {scannedProduct && (
@@ -106,6 +121,18 @@ const CreateInvoiceScreen = () => {
                     <TouchableOpacity style={styles.cancelButton} onPress={resetForm}>
                         <Text style={styles.cancelText}>Cancel</Text>
                     </TouchableOpacity>
+                </View>
+            )}
+
+            {invoiceItems.length > 0 && (
+                <View style={{ marginBottom: 20 }}>
+                    <Text style={styles.label}>Customer/Company Name</Text>
+                    <TextInput
+                    style={styles.input}
+                    placeholder="Enter customer name"
+                    value={customerName}
+                    onChangeText={setCustomerName}
+                    />
                 </View>
             )}
 
@@ -135,7 +162,7 @@ const CreateInvoiceScreen = () => {
                 style={{ flex: 1 }}
                 onBarcodeScanned={handleBarcodeScanned}
                 barcodeScannerSettings={{
-                    barcodeTypes: ['ean13', 'ean8', 'upc_e', 'code39', 'code128', 'qr']
+                    barcodeTypes: ['ean13', 'ean8', 'upc_e', 'code39', 'code128']
                 }}
                 >
                 <TouchableOpacity onPress={() => setScanning(false)} style={styles.closeScanner}>
@@ -226,5 +253,10 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0,0,0,0.6)',
         padding: 10,
         borderRadius: 8
+    },
+    picker: {
+        backgroundColor: '#f0f0f0',
+        borderRadius: 8,
+        marginVertical: 10
     }
 });

@@ -153,7 +153,7 @@ const AddProductScreen = () =>{
                 <CameraView
                 style={{ flex: 1 }}
                 barcodeScannerSettings={{
-                    barcodeTypes: ['ean13', 'ean8', 'upc_e', 'code39', 'code128', 'qr'],
+                    barcodeTypes: ['ean13', 'ean8', 'upc_e', 'code39', 'code128'],
                 }}
                 onBarcodeScanned={handleBarCodeScanned}
                 >

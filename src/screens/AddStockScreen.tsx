@@ -5,6 +5,7 @@ import { getProductByBarcode, updateProductStock } from '../services/db';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types';
+import ProductSelector from 'src/components/ProductSelector';
     
 const AddStockScreen = () => {
     // const navigation = useNavigation();
@@ -65,18 +66,30 @@ const AddStockScreen = () => {
             </View>
         ) : (
             <View>
-                <Text style={styles.label}>To add stock, scan the product barcode:</Text>
-                <TouchableOpacity style={styles.button} onPress={() => setScanning(true)}>
-                    <Text style={styles.buttonText}>Scan Barcode</Text>
-                </TouchableOpacity>
+                <View style={styles.selectionContainer}>
+                    <Text style={styles.label}>To add stock, scan the product barcode:</Text>
+                    <TouchableOpacity style={styles.button} onPress={() => setScanning(true)}>
+                        <Text style={styles.buttonText}>Scan Barcode</Text>
+                    </TouchableOpacity>
+                </View>
+                <View style={styles.divider}>
+                    <Text style={styles.dividerText}>OR</Text>
+                </View>
+
+                
+                <View style={styles.dropdownContainer}>
+                    <Text style={styles.label}>Select product from list:</Text>
+                    <ProductSelector onSelect={setScannedProduct} />
+                </View>
+
             </View>
         )}
 
-        <Modal visible={scanning} animationType="slide">
+        <Modal visible={scanning} animationType="fade">
             <CameraView
                 style={{ flex: 1 }}
                 barcodeScannerSettings={{
-                barcodeTypes: ['ean13', 'ean8', 'upc_e', 'code39', 'code128', 'qr'],
+                barcodeTypes: ['ean13', 'ean8', 'upc_e', 'code39', 'code128'],
                 }}
                 onBarcodeScanned={handleBarcodeScanned}
             >
@@ -97,8 +110,7 @@ export default AddStockScreen;
 const styles = StyleSheet.create({
   container: {
     padding: 20,
-    flex: 1,
-    justifyContent: 'center',
+    flex: 1
   },
   label: {
     fontSize: 16,
@@ -132,5 +144,31 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.6)',
     padding: 10,
     borderRadius: 8
-  }
+  },
+  selectionContainer: {
+    marginBottom: 30,
+    padding: 15,
+    backgroundColor: '#e6f0ff',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#007bff',
+},
+dropdownContainer: {
+  padding: 15,
+  backgroundColor: '#f0fdf4',
+  borderRadius: 10,
+  borderWidth: 1,
+  borderColor: '#28a745',
+},
+
+divider: {
+  alignItems: 'center',
+  marginVertical: 20,
+},
+
+dividerText: {
+  fontSize: 16,
+  fontWeight: 'bold',
+  color: '#888',
+}
 });
