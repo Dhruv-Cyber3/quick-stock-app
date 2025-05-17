@@ -1,138 +1,230 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, FlatList, TouchableOpacity, Alert, StyleSheet } from 'react-native';
+import { View, Text, TextInput, FlatList, TouchableOpacity, Modal, Alert, StyleSheet } from 'react-native';
 import { Product } from 'src/types/products';
-import { getAllProducts } from 'src/services/db';
-import { addInvoiceToDB } from 'src/services/db';
+import { getProductByBarcode, addInvoiceToDB } from 'src/services/db';
 import { InvoiceItem } from 'src/types/invoiceItems';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { CameraView } from 'expo-camera';
+
 
 const CreateInvoiceScreen = () => {
-    const [customerName, setCustomerName] = useState('');
-    const [products, setProducts] = useState<Product[]>([]);
-    const [selectedItems, setSelectedItems] = useState<InvoiceItem[]>([]);
+    const [scanning, setScanning] = useState(false);
+    const [invoiceItems, setInvoiceItems] = useState<{ product: Product, quantity: number }[]>([]);
+    const [scannedProduct, setScannedProduct] = useState<Product | null>(null);
+    const [quantity, setQuantity] = useState('');
 
-    const insets = useSafeAreaInsets();
-
-    useEffect(() =>{
-        const fetchProducts = async () =>{
-            const result = await getAllProducts();
-            setProducts(result);
-        }
-        fetchProducts();
-    }, [])
-
-    const toggleProduct = (product: Product) =>{
-        const existing = selectedItems.find(item => item.product_id === product.id);
-        if(existing){
-            setSelectedItems(selectedItems.filter(item => item.product_id !== product.id));
-        } else{
-            setSelectedItems([...selectedItems, { product_id: product.id!, quantity: 1, price: product.price, invoice_id: 0 }]);
+    const handleBarcodeScanned = async ({ data}: any) => {
+        setScanning(false);
+        const product = await getProductByBarcode(data);
+        console.log('product', product);
+        if(product){
+            setScannedProduct(product);
+        } else {
+            Alert.alert('Product Not Found', 'This prodcut does not exist in your inventory.');
         }
     }
 
-    const updateQuantity = (productId: number, quantity: number) => {
-        setSelectedItems(items => items.map(item =>
-            item.product_id === productId ? { ...item, quantity } : item
-        ));
-    };
+    const addToInvoice = () => {
+        if(!scannedProduct || !quantity) return;
 
-    const handleSubmit = async () =>{
-        if (!customerName || selectedItems.length === 0) {
-            Alert.alert('Missing Information', 'Please enter a customer name and select at least one product.');
+        const quantityNumber = parseInt(quantity);
+        if(quantityNumber > scannedProduct.stock_quantity) {
+            Alert.alert('Stock Error', `Only ${scannedProduct.stock_quantity} units available.`);
             return;
         }
-        const total = selectedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        const invoice = {
-            customer_name: customerName,
-            date: new Date().toLocaleDateString(undefined, { day: '2-digit', month: '2-digit', year: 'numeric' }),
-            total,
-            items: selectedItems,
-        };
-        await addInvoiceToDB(invoice);
-        Alert.alert('Success', 'Invoice created successfully!');
-        setCustomerName('');
-        setSelectedItems([]);
+        const updatedItems = [...invoiceItems, {product: scannedProduct, quantity: quantityNumber}];
+        setInvoiceItems(updatedItems);
+        resetForm();
+    }
+
+    const resetForm = () => {
+        setScannedProduct(null);
+        setQuantity('');
+    }
+
+    const calculateTotal = () => {
+        return invoiceItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0).toFixed(2);
+    }
+
+    const finalizeInvoice = async () => {
+        try {
+            const total = invoiceItems.reduce((sum, item) => sum + item.quantity * item.product.price, 0);
+            const now = new Date().toISOString();
+
+            const invoice = {
+            customer_name: 'Walk-in Customer', // or make this user-input later
+            date: now,
+            total: total,
+            items: invoiceItems.map(item => {
+                if (item.product.id === undefined) {
+                    throw new Error('Product id is undefined');
+                }
+                return {
+                    product_id: item.product.id,
+                    quantity: item.quantity,
+                    price: item.product.price,
+                    invoice_id: 0
+                };
+            })
+            };
+            console.log(invoice)
+
+            await addInvoiceToDB(invoice);
+
+            Alert.alert('Success', 'Invoice saved successfully!');
+            setInvoiceItems([]);     // clear the form
+            setScannedProduct(null); // reset scanning state if needed
+            setQuantity('');         // reset quantity input
+            setInvoiceItems([]);
+        } catch (error) {
+            Alert.alert('Error', 'Could not update stock');
+        }
     }
 
     return (
-        <View style={[styles.container, {paddingBottom: insets.bottom +16 }]}>
-            <Text style={styles.label}>Customer Name:</Text>
-            <TextInput
-            style={styles.input}
-            value={customerName}
-            onChangeText={setCustomerName}
-            placeholder="Enter customer name"
-            />
-
-            <Text style={styles.label}>Select Products:</Text>
-            <FlatList
-            data={products}
-            keyExtractor={(item) => item.id?.toString() ?? ''}
-            renderItem={({ item }) => {
-                const selected = selectedItems.find(i => i.product_id === item.id);
-                return (
-                <TouchableOpacity
-                    style={[styles.productItem, selected && styles.selectedItem]}
-                    onPress={() => toggleProduct(item)}
-                >
-                    <Text>{item.name} - Rs. {item.price}</Text>
-                    {selected && (
-                    <TextInput
-                        style={styles.quantityInput}
-                        keyboardType="numeric"
-                        value={selected.quantity?.toString()}
-                        onChangeText={text => updateQuantity(item.id!, parseInt(text) || 1)}
-                    />
-                    )}
+        <View style={styles.container}>
+            {!scannedProduct && (
+                <TouchableOpacity style={styles.scanButton} onPress={() => setScanning(true)}>
+                    <Text>Scan Product</Text>
                 </TouchableOpacity>
-                );
-            }}
+            )}
+
+            {scannedProduct && (
+                <View style={styles.form}>
+                    <Text style={styles.label}>Product: {scannedProduct.name}</Text>
+                    <Text style={styles.label}>Available: {scannedProduct.stock_quantity}</Text>
+                    <TextInput
+                        style={styles.input}
+                        value={quantity}
+                        onChangeText={setQuantity}
+                        placeholder='Quantity'
+                        keyboardType='numeric'
+                    />
+                    <TouchableOpacity style={styles.addButton} onPress={addToInvoice}>
+                        <Text style={styles.buttonText}>Add to Invoice</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.cancelButton} onPress={resetForm}>
+                        <Text style={styles.cancelText}>Cancel</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
+
+            <FlatList
+                data={invoiceItems}
+                keyExtractor={(item, index) => index.toString()}
+                renderItem={({ item }) => (
+                    <View style={styles.itemRow}>
+                        <Text>{item.product.name} x {item.quantity} = ₹{(item.product.price * item.quantity).toFixed(2)}</Text>
+                    </View>
+                )}
+                ListFooterComponent={() => (
+                    invoiceItems.length > 0 && (
+                        <View style={styles.summary}>
+                            <Text style={styles.totalText}>Total: ₹{calculateTotal()}</Text>
+                            <TouchableOpacity style={styles.finalizeButton} onPress={finalizeInvoice}>
+                                <Text style={styles.buttonText}>Finalize Invoice</Text>
+                            </TouchableOpacity>
+                        </View>
+                    )
+                )}
             />
 
-            <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-            <Text style={styles.buttonText}>Create Invoice</Text>
-            </TouchableOpacity>
+            {/* Scanner Modal */}
+            <Modal visible={scanning} animationType="slide">
+                <CameraView
+                style={{ flex: 1 }}
+                onBarcodeScanned={handleBarcodeScanned}
+                barcodeScannerSettings={{
+                    barcodeTypes: ['ean13', 'ean8', 'upc_e', 'code39', 'code128', 'qr']
+                }}
+                >
+                <TouchableOpacity onPress={() => setScanning(false)} style={styles.closeScanner}>
+                    <Text style={{ color: '#fff' }}>Cancel</Text>
+                </TouchableOpacity>
+                </CameraView>
+            </Modal>
         </View>
-    );
+    )
 }
 
 export default CreateInvoiceScreen;
 
 const styles = StyleSheet.create({
-    container: { flex: 1, padding: 16 },
-    label: { fontWeight: 'bold', marginTop: 10 },
+    container: {
+        flex: 1,
+        padding: 20
+    },
+    scanButton: {
+        backgroundColor: '#007bff',
+        padding: 14,
+        borderRadius: 8,
+        alignItems: 'center',
+        marginBottom: 20
+    },
+    addButton: {
+        backgroundColor: '#28a745',
+        padding: 12,
+        borderRadius: 8,
+        marginTop: 10,
+        alignItems: 'center'
+    },
+    finalizeButton: {
+        backgroundColor: '#6f42c1',
+        padding: 12,
+        borderRadius: 8,
+        marginTop: 20,
+        alignItems: 'center'
+    },
+    cancelButton: {
+        backgroundColor: '#dc3545',
+        padding: 12,
+        borderRadius: 8,
+        marginTop: 10,
+        alignItems: 'center'
+    },
+    cancelText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '600'
+    },
+    form: {
+        marginBottom: 20
+    },
+    label: {
+        fontSize: 16,
+        marginBottom: 6
+    },
     input: {
-      borderWidth: 1,
-      borderColor: '#ccc',
-      borderRadius: 8,
-      padding: 10,
-      marginTop: 4,
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 8,
+        padding: 12,
+        fontSize: 16,
+        backgroundColor: '#fff'
     },
-    productItem: {
-      borderWidth: 1,
-      borderColor: '#ccc',
-      borderRadius: 8,
-      padding: 10,
-      marginTop: 8,
+    itemRow: {
+        paddingVertical: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee'
     },
-    selectedItem: {
-      backgroundColor: '#e6f7ff',
+    summary: {
+        marginTop: 20
     },
-    quantityInput: {
-      borderWidth: 1,
-      borderColor: '#888',
-      padding: 5,
-      borderRadius: 6,
-      width: 60,
-      marginTop: 5,
+    totalText: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 10
     },
-    button: {
-      backgroundColor: '#007bff',
-      padding: 14,
-      borderRadius: 8,
-      alignItems: 'center',
-      marginTop: 20,
+    buttonText: {
+        color: '#fff',
+        fontWeight: '600'
     },
-    buttonText: { color: 'white', fontSize: 16 },
+    closeScanner: {
+        position: 'absolute',
+        top: 40,
+        right: 20,
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        padding: 10,
+        borderRadius: 8
+    }
 });
-  
